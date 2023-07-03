@@ -438,6 +438,76 @@ describe('pages', () => {
     expect(response).not.toContain('don\'t look at this')
     expect(response).toContain('OH NNNNNNOOOOOOOOOOO')
   })
+
+  it('server treeshakable import.meta', async () => {
+    const page = await createPage('/import-meta/server')
+    await page.waitForLoadState('networkidle')
+
+    expect(await page.locator('#envs').textContent()).toMatchInlineSnapshot(`
+      "      {
+        \\"dev\\": [
+          ${isDev()},
+          ${isDev()}
+        ],
+        \\"server\\": [
+          true,
+          true
+        ],
+        \\"client\\": [
+          false,
+          false
+        ],
+        \\"nuxt\\": [
+          true,
+          true
+        ],
+        \\"versions.nuxt\\": [
+          \\"3.6.1\\",
+          \\"3.6.1\\"
+        ],
+        \\"versions?.nuxt\\": [
+          \\"3.6.1\\",
+          \\"3.6.1\\"
+        ]
+      }
+          "
+    `)
+
+    await page.close()
+  })
+
+  it.skipIf(isDev())('client treeshakable import.meta', async () => {
+    const page = await createPage('/import-meta/client')
+    await page.waitForLoadState('networkidle')
+
+    expect(await page.locator('#envs').textContent()).toMatchInlineSnapshot(`
+      "      {
+        \\"dev\\": [
+          false,
+          false
+        ],
+        \\"server\\": [
+          false,
+          false
+        ],
+        \\"client\\": [
+          true,
+          true
+        ],
+        \\"nuxt\\": [
+          true,
+          true
+        ],
+        \\"versions?.nuxt\\": [
+          \\"3.6.1\\",
+          \\"3.6.1\\"
+        ]
+      }
+          "
+    `)
+
+    await page.close()
+  })
 })
 
 describe('nuxt composables', () => {
