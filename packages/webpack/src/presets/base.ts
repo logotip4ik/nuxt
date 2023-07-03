@@ -15,6 +15,7 @@ import type { WarningFilter } from '../plugins/warning-ignore'
 import WarningIgnorePlugin from '../plugins/warning-ignore'
 import type { WebpackConfigContext } from '../utils/config'
 import { applyPresets, fileName } from '../utils/config'
+import { version } from '../../../nuxt/package.json'
 
 export function base (ctx: WebpackConfigContext) {
   applyPresets(ctx, [
@@ -232,16 +233,36 @@ function getWarningIgnoreFilter (ctx: WebpackConfigContext): WarningFilter {
 function getEnv (ctx: WebpackConfigContext) {
   const { options } = ctx
 
+  const staticFlags = {
+    dev: options.dev,
+    server: ctx.isServer,
+    client: ctx.isClient,
+    nuxt: true,
+    'versions.nuxt': version,
+    'versions?.nuxt': version
+  }
+
   const _env: Record<string, string | boolean> = {
     'process.env.NODE_ENV': JSON.stringify(ctx.config.mode),
     'process.mode': JSON.stringify(ctx.config.mode),
-    'process.dev': options.dev,
     'process.test': isTest,
     __NUXT_VERSION__: JSON.stringify(ctx.nuxt._version),
     'process.env.VUE_ENV': JSON.stringify(ctx.name),
     'process.browser': ctx.isClient,
-    'process.client': ctx.isClient,
-    'process.server': ctx.isServer
+
+    ...Object.fromEntries(
+      Object.entries(staticFlags).map(([key, val]) => [
+        `process.${key}`,
+        JSON.stringify(val)
+      ])
+    ),
+
+    ...Object.fromEntries(
+      Object.entries(staticFlags).map(([key, val]) => [
+        `import.meta.${key}`,
+        JSON.stringify(val)
+      ])
+    )
   }
 
   if (options.webpack.aggressiveCodeRemoval) {
