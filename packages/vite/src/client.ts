@@ -10,6 +10,7 @@ import { joinURL, withoutLeadingSlash } from 'ufo'
 import { defu } from 'defu'
 import { defineEventHandler } from 'h3'
 import type { ViteConfig } from '@nuxt/schema'
+import { version } from '../../nuxt/package.json'
 import { chunkErrorPlugin } from './plugins/chunk-error'
 import type { ViteBuildContext } from './vite'
 import { devStyleSSRPlugin } from './plugins/dev-ssr-css'
@@ -20,6 +21,15 @@ import { viteNodePlugin } from './vite-node'
 import { createViteLogger } from './utils/logger'
 
 export async function buildClient (ctx: ViteBuildContext) {
+  const staticFlags = {
+    dev: ctx.nuxt.options.dev,
+    server: false,
+    client: true,
+    nuxt: true,
+    'versions.nuxt': version,
+    'versions?.nuxt': version
+  }
+
   const clientConfig: ViteConfig = vite.mergeConfig(ctx.config, {
     configFile: false,
     base: ctx.nuxt.options.dev
@@ -41,7 +51,21 @@ export async function buildClient (ctx: ViteBuildContext) {
       'process.env.NODE_ENV': JSON.stringify(ctx.config.mode),
       'process.server': false,
       'process.client': true,
-      'module.hot': false
+      'module.hot': false,
+
+      ...Object.fromEntries(
+        Object.entries(staticFlags).map(([key, val]) => [
+          `process.${key}`,
+          JSON.stringify(val)
+        ])
+      ),
+
+      ...Object.fromEntries(
+        Object.entries(staticFlags).map(([key, val]) => [
+          `import.meta.${key}`,
+          JSON.stringify(val)
+        ])
+      )
     },
     optimizeDeps: {
       entries: [ctx.entry]

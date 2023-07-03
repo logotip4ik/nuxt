@@ -5,6 +5,7 @@ import viteJsxPlugin from '@vitejs/plugin-vue-jsx'
 import { logger, resolvePath } from '@nuxt/kit'
 import { joinURL, withTrailingSlash, withoutLeadingSlash } from 'ufo'
 import type { ViteConfig } from '@nuxt/schema'
+import { version } from '../../nuxt/package.json'
 import type { ViteBuildContext } from './vite'
 import { createViteLogger } from './utils/logger'
 import { initViteNodeServer } from './vite-node'
@@ -13,6 +14,15 @@ import { writeManifest } from './manifest'
 import { transpile } from './utils/transpile'
 
 export async function buildServer (ctx: ViteBuildContext) {
+  const staticFlags = {
+    dev: ctx.nuxt.options.dev,
+    server: true,
+    client: false,
+    nuxt: true,
+    'versions.nuxt': version,
+    'versions?.nuxt': version
+  }
+
   const helper = ctx.nuxt.options.nitro.imports !== false ? '' : 'globalThis.'
   const entry = ctx.nuxt.options.ssr ? ctx.entry : await resolvePath(resolve(ctx.nuxt.options.appDir, 'entry-spa'))
   const serverConfig: ViteConfig = vite.mergeConfig(ctx.config, {
@@ -45,7 +55,21 @@ export async function buildServer (ctx: ViteBuildContext) {
       'typeof document': '"undefined"',
       'typeof navigator': '"undefined"',
       'typeof location': '"undefined"',
-      'typeof XMLHttpRequest': '"undefined"'
+      'typeof XMLHttpRequest': '"undefined"',
+
+      ...Object.fromEntries(
+        Object.entries(staticFlags).map(([key, val]) => [
+            `process.${key}`,
+            JSON.stringify(val)
+        ])
+      ),
+
+      ...Object.fromEntries(
+        Object.entries(staticFlags).map(([key, val]) => [
+          `import.meta.${key}`,
+          JSON.stringify(val)
+        ])
+      )
     },
     optimizeDeps: {
       entries: ctx.nuxt.options.ssr ? [ctx.entry] : []
