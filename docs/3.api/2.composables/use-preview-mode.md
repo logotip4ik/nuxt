@@ -40,7 +40,7 @@ const { enabled, state } = usePreviewMode({
 })
 ```
 
-::alert{icon=👉}
+::note
 The `getState` function will append returned values to current state, so be careful not to accidentally overwrite important state.
 ::
 
